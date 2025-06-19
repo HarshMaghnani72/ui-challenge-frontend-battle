@@ -1,10 +1,11 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Wind, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
+import { Wind, AlertTriangle, CheckCircle, XCircle, MapPin } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAirQuality } from "@/hooks/use-real-time-data"
+import { useLocation } from "@/hooks/use-location"
 
 const getAQIStatus = (aqi: number) => {
   if (aqi <= 1) return { label: "Good", color: "bg-green-500", icon: CheckCircle, textColor: "text-green-700" }
@@ -15,7 +16,8 @@ const getAQIStatus = (aqi: number) => {
 }
 
 export default function AirQualityWidget() {
-  const { airQuality, loading, error } = useAirQuality()
+  const { location } = useLocation()
+  const { airQuality, loading, error } = useAirQuality(location?.latitude, location?.longitude)
 
   if (loading) {
     return (
@@ -48,6 +50,12 @@ export default function AirQualityWidget() {
         </CardHeader>
         <CardContent>
           <p className="text-slate-500 dark:text-slate-400">Unable to load air quality data</p>
+          {location && (
+            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              {location.city}, {location.country}
+            </p>
+          )}
         </CardContent>
       </Card>
     )
@@ -64,7 +72,10 @@ export default function AirQualityWidget() {
             <Wind className="w-5 h-5 text-blue-500" />
             Air Quality
           </CardTitle>
-          <p className="text-sm text-slate-600 dark:text-slate-400">{airQuality.location}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1">
+            <MapPin className="w-3 h-3" />
+            {airQuality.location}
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* AQI Status */}

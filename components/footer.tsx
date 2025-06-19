@@ -43,7 +43,13 @@ export default function Footer() {
       const element = document.querySelector(href)
       if (element) {
         element.scrollIntoView({ behavior: "smooth" })
+      } else {
+        // If element doesn't exist, scroll to top as fallback
+        window.scrollTo({ top: 0, behavior: "smooth" })
       }
+    } else {
+      // For external links, open in new tab
+      window.open(href, "_blank", "noopener,noreferrer")
     }
   }
 
@@ -111,7 +117,14 @@ export default function Footer() {
                 {links.map((link, index) => (
                   <li key={index}>
                     <button
-                      onClick={() => scrollToSection(link.href)}
+                      onClick={(e) => {
+                        try {
+                          e.preventDefault()
+                          scrollToSection(link.href)
+                        } catch (error) {
+                          console.warn("Navigation error:", error)
+                        }
+                      }}
                       className="text-slate-400 hover:text-white transition-colors duration-200 text-left"
                     >
                       {link.name}
