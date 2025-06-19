@@ -4,13 +4,10 @@ import type React from "react"
 
 import { motion, useInView } from "framer-motion"
 import { useRef, useState, useEffect } from "react"
-import { ArrowRight, Download, TrendingUp, TrendingDown, ExternalLink, FileText, Database } from "lucide-react"
+import { ArrowRight, Download, TrendingUp, TrendingDown } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
 import LiveMetricsDashboard from "./live-metrics-dashboard"
-import { apiClient } from "@/lib/api-client"
 
 // Ripple Effect Component
 const RippleButton = ({
@@ -137,7 +134,6 @@ const MetricCard = ({
   data,
   actionText,
   actionIcon: ActionIcon,
-  dataType,
   delay = 0,
 }: {
   title: string
@@ -148,48 +144,11 @@ const MetricCard = ({
   data: Array<{ year: string; value: number }>
   actionText: string
   actionIcon: any
-  dataType: string
   delay?: number
 }) => {
   const maxValue = Math.max(...data.map((d) => d.value))
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
-  const { toast } = useToast()
-
-  const handleAction = async () => {
-    if (actionText.includes("breakdown")) {
-      // Navigate to detailed breakdown
-      toast({
-        title: "Opening Detailed Breakdown",
-        description: "Loading comprehensive carbon footprint analysis...",
-      })
-      // In a real app, this would navigate to a detailed page
-      setTimeout(() => {
-        window.open("#insights", "_self")
-      }, 1000)
-    } else if (actionText.includes("Download")) {
-      // Handle data download
-      try {
-        toast({
-          title: "Preparing Download",
-          description: "Generating your sustainability data export...",
-        })
-
-        await apiClient.exportData("csv", dataType)
-
-        toast({
-          title: "Download Complete",
-          description: "Your data has been downloaded successfully.",
-        })
-      } catch (error) {
-        toast({
-          title: "Download Failed",
-          description: "There was an error downloading your data. Please try again.",
-          variant: "destructive",
-        })
-      }
-    }
-  }
 
   return (
     <motion.div
@@ -233,48 +192,13 @@ const MetricCard = ({
               />
             ))}
           </div>
-
-          {/* Action Buttons */}
-          <div className="space-y-2">
-            <RippleButton
-              className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 px-4 rounded-full flex items-center justify-center gap-2 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500 group-hover:shadow-md"
-              onClick={handleAction}
-            >
-              <span className="text-sm font-medium">{actionText}</span>
-              <ActionIcon className="w-4 h-4" />
-            </RippleButton>
-
-            {/* Additional Export Options */}
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 text-xs"
-                onClick={() => apiClient.exportData("json", dataType)}
-              >
-                <Database className="w-3 h-3 mr-1" />
-                JSON
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 text-xs"
-                onClick={() => apiClient.exportData("pdf", dataType)}
-              >
-                <FileText className="w-3 h-3 mr-1" />
-                PDF
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 text-xs"
-                onClick={() => window.open(`#insights`, "_self")}
-              >
-                <ExternalLink className="w-3 h-3 mr-1" />
-                View
-              </Button>
-            </div>
-          </div>
+          <RippleButton
+            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2 px-4 rounded-full flex items-center justify-center gap-2 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500 group-hover:shadow-md"
+            onClick={() => console.log(`${actionText} clicked`)}
+          >
+            <span className="text-sm font-medium">{actionText}</span>
+            <ActionIcon className="w-4 h-4" />
+          </RippleButton>
         </CardContent>
       </Card>
     </motion.div>
@@ -350,7 +274,6 @@ export default function Metrics() {
             data={carbonData}
             actionText="See full breakdown of carbon footprint"
             actionIcon={ArrowRight}
-            dataType="carbon-footprint"
             delay={0.2}
           />
           <MetricCard
@@ -362,7 +285,6 @@ export default function Metrics() {
             data={energyIntensityData}
             actionText="Download the data"
             actionIcon={Download}
-            dataType="energy-data"
             delay={0.4}
           />
           <MetricCard
@@ -374,7 +296,6 @@ export default function Metrics() {
             data={energyConsumptionData}
             actionText="Download the data"
             actionIcon={Download}
-            dataType="energy-data"
             delay={0.6}
           />
         </div>

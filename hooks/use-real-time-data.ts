@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { apiClient, type RealTimeMetrics, type AirQualityData } from "@/lib/api-client"
 
-export function useRealTimeMetrics() {
+export function useRealTimeMetrics(refreshInterval = 30000) {
   const [metrics, setMetrics] = useState<RealTimeMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -16,62 +16,49 @@ export function useRealTimeMetrics() {
       setMetrics(data)
       setLastUpdated(new Date())
     } catch (err) {
-      setError("Failed to fetch real-time metrics")
-      console.error("Error fetching metrics:", err)
+      setError(err instanceof Error ? err.message : "Failed to fetch metrics")
     } finally {
       setLoading(false)
     }
   }, [])
 
-  const refresh = useCallback(() => {
-    setLoading(true)
-    fetchMetrics()
-  }, [fetchMetrics])
-
   useEffect(() => {
     fetchMetrics()
 
-    // Set up auto-refresh every 30 seconds
-    const interval = setInterval(fetchMetrics, 30000)
+    const interval = setInterval(fetchMetrics, refreshInterval)
 
     return () => clearInterval(interval)
-  }, [fetchMetrics])
+  }, [fetchMetrics, refreshInterval])
 
-  return { metrics, loading, error, lastUpdated, refresh }
+  return { metrics, loading, error, lastUpdated, refetch: fetchMetrics }
 }
 
-export function useAirQuality(lat?: number, lng?: number) {
+export function useAirQuality(lat?: number, lon?: number, refreshInterval = 60000) {
   const [airQuality, setAirQuality] = useState<AirQualityData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchAirQuality = useCallback(async () => {
-    if (!lat || !lng) return
-
     try {
       setError(null)
-      const data = await apiClient.getAirQualityData(lat, lng)
+      const data = await apiClient.getAirQualityData(lat, lon)
       setAirQuality(data)
     } catch (err) {
-      setError("Failed to fetch air quality data")
-      console.error("Error fetching air quality:", err)
+      setError(err instanceof Error ? err.message : "Failed to fetch air quality data")
     } finally {
       setLoading(false)
     }
-  }, [lat, lng])
+  }, [lat, lon])
 
   useEffect(() => {
-    if (lat && lng) {
-      fetchAirQuality()
+    fetchAirQuality()
 
-      // Set up auto-refresh every 5 minutes
-      const interval = setInterval(fetchAirQuality, 300000)
+    const interval = setInterval(fetchAirQuality, refreshInterval)
 
-      return () => clearInterval(interval)
-    }
-  }, [fetchAirQuality, lat, lng])
+    return () => clearInterval(interval)
+  }, [fetchAirQuality, refreshInterval])
 
-  return { airQuality, loading, error }
+  return { airQuality, loading, error, refetch: fetchAirQuality }
 }
 
 export function useHistoricalData() {
@@ -80,29 +67,23 @@ export function useHistoricalData() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchHistoricalData = useCallback(async () => {
-    try {
-      setError(null)
-      const [carbon, energy] = await Promise.all([apiClient.getCarbonFootprintData(), apiClient.getEnergyData()])
+  useEffect(() => {
+    const fetchHistoricalData = async () => {
+      try {
+        setError(null)
+        const [carbon, energy] = await Promise.all([apiClient.getCarbonFootprintData(), apiClient.getEnergyData()])
 
-      setCarbonData(carbon)
-      setEnergyData(energy)
-    } catch (err) {
-      setError("Failed to fetch historical data")
-      console.error("Error fetching historical data:", err)
-    } finally {
-      setLoading(false)
+        setCarbonData(carbon)
+        setEnergyData(energy)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch historical data")
+      } finally {
+        setLoading(false)
+      }
     }
+
+    fetchHistoricalData()
   }, [])
 
-  useEffect(() => {
-    fetchHistoricalData()
-  }, [fetchHistoricalData])
-
-  const refresh = useCallback(() => {
-    setLoading(true)
-    fetchHistoricalData()
-  }, [fetchHistoricalData])
-
-  return { carbonData, energyData, loading, error, refresh }
+  return { carbonData, energyData, loading, error }
 }
